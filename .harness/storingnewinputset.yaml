@@ -1,0 +1,32 @@
+inputSet:
+  identifier: "storingnewinputset"
+  pipeline:
+    identifier: "newdemos"
+    properties:
+      ci:
+        codebase:
+          build:
+            type: "branch"
+            spec:
+              branch: "main"
+    stages:
+    - stage:
+        identifier: "Build_Test_and_Push"
+        type: "CI"
+        spec:
+          execution:
+            steps:
+            - step:
+                identifier: "RunUnitTests"
+                type: "Run"
+                spec:
+                  connectorRef: "newdockerconnector"
+            - step:
+                identifier: "Buildandpushimage"
+                type: "BuildAndPushDockerRegistry"
+                spec:
+                  connectorRef: "newdockerconnector"
+                  repo: "shruthikini/testgitexperience"
+  name: "storing-new-input-set"
+  orgIdentifier: "default"
+  projectIdentifier: "HarnessGitExperience"
