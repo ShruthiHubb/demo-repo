@@ -1,0 +1,80 @@
+pipeline:
+  name: demo-project-git-exp
+  identifier: demoprojectgitexp
+  projectIdentifier: HarnessGitExperience
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: deploy-app
+        identifier: deployapp
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: service1
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: <+input>
+                      sources: <+input>
+          environment:
+            environmentRef: env1
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: infrademo
+          execution:
+            steps:
+              - step:
+                  type: K8sCanaryDeploy
+                  name: k8-canary
+                  identifier: k8canary
+                  spec:
+                    skipDryRun: false
+                    instanceSelection:
+                      type: Count
+                      spec:
+                        count: 1
+                    delegateSelectors:
+                      - k8-delegates
+                  timeout: 10m
+                  failureStrategies: []
+              - step:
+                  type: K8sCanaryDelete
+                  name: delete-workload
+                  identifier: deleteworkload
+                  spec:
+                    skipDryRun: false
+                  timeout: 10m
+              - step:
+                  type: K8sRollingDeploy
+                  name: k8-rollout-deploy-app
+                  identifier: k8rolloutdeployapp
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+                  timeout: 10m
+            rollbackSteps:
+              - step:
+                  name: Canary Delete
+                  identifier: rollbackCanaryDelete
+                  type: K8sCanaryDelete
+                  timeout: 10m
+                  spec: {}
+              - step:
+                  name: Rolling Rollback
+                  identifier: rollingRollback
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec: {}
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
