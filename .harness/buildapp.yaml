@@ -1,0 +1,55 @@
+pipeline:
+  name: build-app
+  identifier: buildapp
+  projectIdentifier: HarnessGitExperience
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: GitHubforbuild
+        repoName: goHelloWorldServer
+        build: <+input>
+  stages:
+    - stage:
+        name: Build Test and Push
+        identifier: Build_Test_and_Push
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: k8demo
+              namespace: harness-delegate
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: RunUnitTests
+                  identifier: RunUnitTests
+                  spec:
+                    connectorRef: newdockerconnector
+                    image: golang:1.15
+                    shell: Sh
+                    command: |-
+                      go get gotest.tools/gotestsum
+                      gotestsum --format=standard-verbose --junitfile unit-tests.xml || true
+                      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - "*.xml"
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: Build-and-push-image
+                  identifier: Buildandpushimage
+                  spec:
+                    connectorRef: newdockerconnector
+                    repo: shruthikini/testgitexperience
+                    tags:
+                      - <+pipeline.sequenceId>
