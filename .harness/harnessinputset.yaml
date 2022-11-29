@@ -1,0 +1,37 @@
+inputSet:
+  identifier: "harnessinputset"
+  pipeline:
+    identifier: "buildingapps"
+    properties:
+      ci:
+        codebase:
+          build:
+            type: "branch"
+            spec:
+              branch: "main"
+    stages:
+    - stage:
+        identifier: "Build_Test_and_Push"
+        type: "CI"
+        spec:
+          infrastructure:
+            type: "KubernetesDirect"
+            spec:
+              connectorRef: "k8demo"
+              namespace: "harness-delegate"
+          execution:
+            steps:
+            - step:
+                identifier: "RunUnitTests"
+                type: "Run"
+                spec:
+                  connectorRef: "newdockerconnector"
+            - step:
+                identifier: "Buildandpushimage"
+                type: "BuildAndPushDockerRegistry"
+                spec:
+                  connectorRef: "newdockerconnector"
+                  repo: "shruthikini/testgitexperience"
+  name: "harness-input-set"
+  orgIdentifier: "default"
+  projectIdentifier: "HarnessGitExperience"
